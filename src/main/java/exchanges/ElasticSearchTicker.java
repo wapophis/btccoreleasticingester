@@ -1,6 +1,7 @@
 package exchanges;
 
 import com.google.gson.Gson;
+import daemon.Params;
 import org.apache.http.HttpHost;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.http.impl.nio.reactor.IOReactorConfig;
@@ -35,9 +36,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class ElasticSearchTicker implements TickerClient {
-     private static RestClientBuilder clientBuilder=            RestClient.builder(
-             new HttpHost("localhost", 9200, "http"),
-             new HttpHost("localhost", 9201, "http"))
+
+    private static HttpHost[] esHosts=new HttpHost[Params.elasticSearchServerUri.size()];
+    static{
+        for(int i=0;i<Params.elasticSearchServerUri.size();i++){
+            esHosts[i]=new HttpHost(Params.elasticSearchServerUri.get(i));
+        }
+    }
+     private static RestClientBuilder clientBuilder=            RestClient.builder(esHosts)
              .setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
                  @Override
                  public HttpAsyncClientBuilder customizeHttpClient(
