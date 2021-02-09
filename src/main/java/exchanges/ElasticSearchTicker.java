@@ -40,7 +40,10 @@ public class ElasticSearchTicker implements TickerClient {
     private static HttpHost[] esHosts=new HttpHost[Params.elasticSearchServerUri.size()];
     static{
         for(int i=0;i<Params.elasticSearchServerUri.size();i++){
-            esHosts[i]=new HttpHost(Params.elasticSearchServerUri.get(i));
+            esHosts[i]=new HttpHost(Params.elasticSearchServerUri.get(i).split("://")[1].split(":")[0],
+                    Integer.parseInt(Params.elasticSearchServerUri.get(i).split("://")[1].split(":")[1]),
+                    Params.elasticSearchServerUri.get(i).split("://")[0]);
+            //esHosts[1]=new HttpHost("localhost",9201,"http");
         }
     }
      private static RestClientBuilder clientBuilder=            RestClient.builder(esHosts)

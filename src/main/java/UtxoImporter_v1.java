@@ -33,6 +33,7 @@ public class UtxoImporter_v1 {
 
     private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
     private static SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd");
+    private static ExecutorService executorService=Executors.newFixedThreadPool(4);
 
     /**
      * Importer to load the mempools tx and decode utxos to be ingested in the elastic server.
@@ -80,7 +81,7 @@ public class UtxoImporter_v1 {
      * Setted for command line params
      * @param args
      */
-    private static void setParams(String... args){
+    public static void setParams(String... args){
         String lastCommand=null;
         String lastValue=null;
 
@@ -238,7 +239,10 @@ public class UtxoImporter_v1 {
                         }
 
                         BigDecimal spotPrice=ticker.getPriceAtDate(new DateTime(txDate),pricePrecition);
-                        BlockSincroPool.addToSincroPool(txDecoded, txDate,spotPrice);
+                        BlockSincroPool blockSincroPool=new BlockSincroPool(txDecoded,txDate,spotPrice);
+                        executorService.submit(blockSincroPool);
+
+
                     } catch (Throwable r) {
                         r.printStackTrace();
                     }

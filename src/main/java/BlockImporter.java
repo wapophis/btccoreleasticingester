@@ -18,9 +18,7 @@ import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 public class BlockImporter {
@@ -33,7 +31,8 @@ public class BlockImporter {
 
     private static SimpleDateFormat sdf= new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
-    private final static ElasticSearchTicker elasticSearchTicker=new ElasticSearchTicker(Params.tickerIndex);
+
+    private final static ExecutorService executorService= Executors.newFixedThreadPool(4);
 
     /**
      * The block importer imports blocks from the btc-node core, queriying the tx set and transforms it to be ingested by the elastic search node.
@@ -44,6 +43,10 @@ public class BlockImporter {
 
     public static void main(String[] args) throws Exception
     {
+        UtxoImporter_v1.setParams(args);
+        ElasticSearchTicker elasticSearchTicker=new ElasticSearchTicker(Params.tickerIndex);
+
+
         BtcBlockClient blockClient=new BtcBlockClient();
         BlockImporter.startBlock=Integer.parseInt(args[0]);
         BlockImporter.endBlock=Integer.parseInt(args[1]);
@@ -92,15 +95,8 @@ public class BlockImporter {
                             }
 
                             if(!BtcEsClient.existsTransaction(transaction.txid)) {
-                                try {
-                                    BlockSincroPool.addToSincroPool(transaction, new Date(block.time * 1000L), spotPrice);
-
-
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                } catch (ParseException e) {
-                                    e.printStackTrace();
-                                }
+                                    BlockSincroPool blockSincroPool=new BlockSincroPool(transaction,new Date(block.time * 1000L), spotPrice);
+                                    executorService.submit(blockSincroPool);
                             }
                         }
                     });
